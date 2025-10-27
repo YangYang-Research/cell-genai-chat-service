@@ -1,0 +1,6 @@
+langchain
+langchain_aws
+uvicorn
+boto3
+fastapi
+dotenv
