@@ -6,11 +6,11 @@ class Streaming():
     def __init__(self):
         self.agent = Agent()
         
-    def agent_streaming(self, messages, stream_mode) -> Generator[str, None, None]:
+    def agent_streaming(self, message, model_name, model_id, stream_mode) -> Generator[str, None, None]:
         try:
-            cell_agent = self.agent.cell_agent()
+            agent = self.agent.agent(model_name=model_name, model_id=model_id)
             # The ReAct agent returns a dict with 'output'
-            for token, metadata in cell_agent.stream(messages, stream_mode=stream_mode):
+            for token, metadata in agent.stream(input=message, stream_mode=stream_mode):
                 if metadata.get("langgraph_node") == "model":
                     content_blocks = token.content_blocks or []
                     for block in content_blocks:
