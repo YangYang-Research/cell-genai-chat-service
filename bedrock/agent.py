@@ -1,12 +1,11 @@
 import os
 import boto3
-from bedrock.model import Model
+from bedrock.converse import Converse
 from langchain.agents import create_agent
-from langchain_aws import ChatBedrockConverse
 
 class Agent():
     def __init__(self):
-        self.model = Model()
+        self.chat_converse = Converse()
         self.GENERAL_ASSISTANT_PROMPT = self.load_general_assistant_prompt()
 
     def load_general_assistant_prompt(self) -> str:
@@ -19,10 +18,10 @@ class Agent():
         except FileNotFoundError:
             raise FileNotFoundError(f"[Agent] Prompt file not found: {prompt_path}")
 
-    def cell_agent(self):       
+    def agent(self, model_name: str, model_id: str):       
         agent = create_agent(
             system_prompt=self.GENERAL_ASSISTANT_PROMPT,
             tools=[],
-            model=self.model.claude_model_text()
+            model=self.chat_converse.claude_model_text()
         )
         return agent
