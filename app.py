@@ -34,19 +34,12 @@ def health():
 @app.post("/v1/chat/agent/completions")
 def chat_agent_completions(req: ChatRequest):
     try:
-        messages = Utils.format_agent_messages(req.messages)
-        last_user_msg = messages[-1].content if messages else "Hello!"
-        
-        history = [
-            {"role": "user" if isinstance(m, HumanMessage) else "assistant", "content": m.content}
-            for m in messages[:-1]
-        ]
+        formatted_messages = Utils.format_agent_messages(req.messages)
 
-        message_payload = {
-            "messages": history + [
-                {"role": "user", "content": last_user_msg}
-            ]
-        }
+        if not formatted_messages:
+            return JSONResponse(status_code=400, content={"error": "No messages provided"})
+
+        message_payload = {"messages": formatted_messages}
         
         return StreamingResponse(agent_stream.agent_streaming(message=message_payload, model_name=req.model_name, model_id=req.model_id, stream_mode="messages"), media_type="text/event-stream")
 
