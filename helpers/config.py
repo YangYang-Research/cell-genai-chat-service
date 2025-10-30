@@ -37,3 +37,8 @@ class LogConfig(object):
 
     log_max_size: str = os.getenv("LOG_MAX_SIZE", "10485760")  # 10 MB
     log_max_backups: str = os.getenv("LOG_MAX_BACKUPS", "5")    # 5 backup files
+
+@dataclass
+class ToolConfig(object):
+    """Tool configuration class."""
+    openweather_api_key: str = ""

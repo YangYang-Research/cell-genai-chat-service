@@ -5,8 +5,10 @@ from langchain_community.utilities import (
     WikipediaAPIWrapper,
     GoogleTrendsAPIWrapper,
     GoogleScholarAPIWrapper,
+    SearxSearchWrapper
 )
 from langchain_google_community import GoogleSearchAPIWrapper
+from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain_community.tools import (
     DuckDuckGoSearchRun,
     ArxivQueryRun,
@@ -17,8 +19,9 @@ from langchain_community.tools import (
     RedditSearchRun,
     SearxSearchRun,
 )
+from helpers.config import ToolConfig
 
-
+tool_conf = ToolConfig()
 # --- TOOL DEFINITIONS ---
 
 @tool
@@ -98,15 +101,19 @@ def RedditSearch():
 @tool
 def SearxSearch():
     """Perform privacy-friendly web search using Searx."""
+    searxsearch_wrapper = SearxSearchWrapper(searx_host="https://searx.rhscz.eu")
     return SearxSearchRun(
         name="SearxSearch",
+        wrapper=searxsearch_wrapper,
         description="Use this tool for privacy-respecting meta search results across multiple search engines (via Searx).",
     )
 
 @tool
 def Weather():
     """Query weather data via OpenWeatherMap."""
+    openweather_wrapper = OpenWeatherMapAPIWrapper(openweathermap_api_key=tool_conf.openweather_api_key)
     return OpenWeatherMapQueryRun(
         name="WeatherQuery",
+        api_wrapper=openweather_wrapper,
         description="Use this tool to get current or forecasted weather information for a given location.",
     )
