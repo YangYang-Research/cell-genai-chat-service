@@ -4,3 +4,7 @@ uvicorn
 boto3
 fastapi
 dotenv
+ddgs
+wikipedia
+arxiv
+langchain-google-community
