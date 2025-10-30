@@ -1,25 +1,30 @@
 import traceback
 from bedrock.agent import Agent
 from typing import List, Literal, Generator, Optional
+from helpers.loog import logger
+from fastapi.responses import JSONResponse
 
 class Streaming():
     def __init__(self):
         self.agent = Agent()
         
-    def agent_streaming(self, message, model_name, model_id, stream_mode) -> Generator[str, None, None]:
+    def agent_streaming(self, chat_id: str, message: dict, model_name: str, stream_mode: str) -> Generator[str, None, None]:
         try:
-            agent = self.agent.agent(model_name=model_name, model_id=model_id)
-            # The ReAct agent returns a dict with 'output'
-            for token, metadata in agent.stream(input=message, stream_mode=stream_mode):
-                if metadata.get("langgraph_node") == "model":
-                    content_blocks = token.content_blocks or []
-                    for block in content_blocks:
-                        if block.get("type") == "text":
-                            text = block.get("text", "")
-                            if text.strip():
-                                yield text
-            yield "\n"
+            agent = self.agent.agent(model_name=model_name)
+            if agent:
+                # The ReAct agent returns a dict with 'output'
+                for token, metadata in agent.stream(input=message, stream_mode=stream_mode):
+                    if metadata.get("langgraph_node") == "model":
+                        content_blocks = token.content_blocks or []
+                        for block in content_blocks:
+                            if block.get("type") == "text":
+                                text = block.get("text", "")
+                                if text.strip():
+                                    yield text
+                yield "\n"
+            else:
+                yield f"Model {model_name} not found."
         except Exception as e:
             yield f"\n[Error] {str(e)}"
-            print("TRACE:", traceback.format_exc())
+            logger.error(f"An error occurred: {e} \n TRACEBACK: ", traceback.format_exc())
     

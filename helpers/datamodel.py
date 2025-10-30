@@ -25,6 +25,6 @@ class ChatMessage(BaseModel):
     content: Union[str, List[ContentBlock]]
 
 class ChatRequest(BaseModel):
-    model_id: Optional[str] = None
+    chat_session_id: Optional[str] = None
     model_name: Optional[str] = None
     messages: List[ChatMessage]

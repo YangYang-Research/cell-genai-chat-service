@@ -18,10 +18,13 @@ class Agent():
         except FileNotFoundError:
             raise FileNotFoundError(f"[Agent] Prompt file not found: {prompt_path}")
 
-    def agent(self, model_name: str, model_id: str):       
-        agent = create_agent(
-            system_prompt=self.GENERAL_ASSISTANT_PROMPT,
-            tools=[],
-            model=self.chat_converse.claude_model_text()
-        )
-        return agent
+    def agent(self, model_name: str):      
+        if model_name == "claude": 
+            agent = create_agent(
+                system_prompt=self.GENERAL_ASSISTANT_PROMPT,
+                tools=[],
+                model=self.chat_converse.claude_model_text()
+            )
+            return agent
+        else:
+            return None
