@@ -1,12 +1,12 @@
 import traceback
-from bedrock.agent import Agent
+from bedrock.agent import AgentFactory
 from typing import List, Literal, Generator, Optional
 from helpers.loog import logger
 from fastapi.responses import JSONResponse
 
 class Streaming():
     def __init__(self):
-        self.agent = Agent()
+        self.agent = AgentFactory()
         
     def agent_streaming(self, chat_id: str, message: dict, model_name: str, stream_mode: str) -> Generator[str, None, None]:
         try:

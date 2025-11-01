@@ -5,9 +5,14 @@ from langchain_community.utilities import (
     WikipediaAPIWrapper,
     GoogleTrendsAPIWrapper,
     GoogleScholarAPIWrapper,
-    SearxSearchWrapper
+    AskNewsAPIWrapper,
+    SearxSearchWrapper,
 )
+
 from langchain_google_community import GoogleSearchAPIWrapper
+from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
+from langchain_community.tools.google_scholar import GoogleScholarQueryRun
+from langchain_community.tools.google_trends import GoogleTrendsQueryRun
 from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain_community.tools import (
     DuckDuckGoSearchRun,
@@ -22,7 +27,6 @@ from langchain_community.tools import (
 from helpers.config import ToolConfig
 
 tool_conf = ToolConfig()
-# --- TOOL DEFINITIONS ---
 
 @tool
 def DuckDuckGo():
@@ -57,7 +61,7 @@ def Wikipedia():
 @tool
 def GoogleSearch():
     """Perform web search using Google."""
-    google_wrapper = GoogleSearchAPIWrapper()
+    google_wrapper = GoogleSearchAPIWrapper(google_api_key=tool_conf.google_search_api_key, google_cse_id=tool_conf.google_search_cse_id)
     return GoogleSearchRun(
         name="GoogleSearch",
         api_wrapper=google_wrapper,
@@ -67,41 +71,47 @@ def GoogleSearch():
 @tool
 def GoogleScholar():
     """Perform academic search via Google Scholar."""
-    scholar_wrapper = GoogleScholarAPIWrapper(top_k_results=5)
-    return scholar_wrapper.as_tool(
+    scholar_wrapper = GoogleScholarAPIWrapper(top_k_results=5, serp_api_key=tool_conf.google_scholar_serp_api_key)
+    return GoogleScholarQueryRun(
         name="GoogleScholarSearch",
+        api_wrapper=scholar_wrapper,
         description="Use this tool to find peer-reviewed research papers or academic publications from Google Scholar.",
     )
 
 @tool
 def GoogleTrends():
     """Analyze keyword popularity via Google Trends."""
-    trends_wrapper = GoogleTrendsAPIWrapper()
-    return trends_wrapper.as_tool(
+    trends_wrapper = GoogleTrendsAPIWrapper(serp_api_key=tool_conf.google_trend_serp_api_key)
+    return GoogleTrendsQueryRun(
         name="GoogleTrends",
+        api_wrapper=trends_wrapper,
         description="Use this tool to analyze trending search topics or compare keyword popularity across time or regions.",
     )
 
 @tool
 def AskNews():
     """Search current news headlines and articles."""
+    ask_wrapper = AskNewsAPIWrapper(asknews_client_id=tool_conf.asknews_client_id, asknews_client_secret=tool_conf.asknews_client_secret)
     return AskNewsSearch(
         name="AskNews",
+        api_wrapper=ask_wrapper,
         description="Use this tool to search for breaking news and recent media coverage on a topic.",
     )
 
 @tool
 def RedditSearch():
     """Search Reddit posts and comments."""
+    reddit_wrapper = RedditSearchAPIWrapper(reddit_client_id=tool_conf.reddit_client_id, reddit_client_secret=tool_conf.reddit_client_secret, reddit_user_agent=tool_conf.reddit_user_agent)
     return RedditSearchRun(
         name="RedditSearch",
+        api_wrapper=reddit_wrapper,
         description="Use this tool to search Reddit posts and community discussions. Helpful for opinions or social sentiment.",
     )
 
 @tool
 def SearxSearch():
     """Perform privacy-friendly web search using Searx."""
-    searxsearch_wrapper = SearxSearchWrapper(searx_host="https://searx.rhscz.eu")
+    searxsearch_wrapper = SearxSearchWrapper(searx_host=tool_conf.searx_host)
     return SearxSearchRun(
         name="SearxSearch",
         wrapper=searxsearch_wrapper,
@@ -109,7 +119,7 @@ def SearxSearch():
     )
 
 @tool
-def Weather():
+def OpenWeather():
     """Query weather data via OpenWeatherMap."""
     openweather_wrapper = OpenWeatherMapAPIWrapper(openweathermap_api_key=tool_conf.openweather_api_key)
     return OpenWeatherMapQueryRun(
