@@ -1,4 +1,3 @@
-import boto3
 import uvicorn
 import traceback
 from fastapi import FastAPI
