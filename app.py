@@ -14,7 +14,7 @@ aws_conf = AWSConfig()
 streaming = Streaming()
 
 # ------------------- FastAPI App -------------------
-app = FastAPI(title="Cell GenAI Chat Service", version=app_conf.app_version)
+app = FastAPI(title=app_conf.app_name, version=app_conf.app_version)
 
 app.add_middleware(
     CORSMiddleware,

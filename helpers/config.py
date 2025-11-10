@@ -9,7 +9,7 @@ load_dotenv()
 class AppConfig(object):
     """Base configuration class."""
     
-    app_name: str = os.getenv("APP_NAME", "Cell GenAI Chat Service")
+    app_name: str = os.getenv("APP_NAME", "Yang GenAI Chat Service")
     app_version: str = os.getenv("APP_VERSION", "0.0.0")
     api_ver_1: str = "v1"
     
