@@ -20,11 +20,20 @@ class ContentBlock(BaseModel):
     source: Optional[ImageSource] = None
     document: Optional[DocumentContent] = None
 
-class ChatMessage(BaseModel):
+class ChatAgentMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: Union[str, List[ContentBlock]]
 
-class ChatRequest(BaseModel):
+class ChatAgentRequest(BaseModel):
     chat_session_id: Optional[str] = None
     model_name: Optional[str] = None
-    messages: List[ChatMessage]
+    messages: List[ChatAgentMessage]
+
+class ChatLLMMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: Union[str, List[ContentBlock]]
+
+class ChatLLMRequest(BaseModel):
+    chat_session_id: Optional[str] = None
+    model_name: Optional[str] = None
+    messages: List[ChatLLMMessage]

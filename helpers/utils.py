@@ -1,8 +1,7 @@
 import base64
-from typing import List, Literal, Generator, Optional
-from helpers.datamodel import ChatMessage, ChatRequest, ContentBlock
-from langchain_core.messages import HumanMessage, AIMessage
-from typing import List, Dict, Any, Union
+from typing import List, Optional
+from helpers.datamodel import ChatAgentMessage
+from typing import List, Dict, Any
 
 class Utils:
     def __init__(self):
@@ -17,7 +16,7 @@ class Utils:
         except Exception:
             return None
         
-    def format_agent_messages(messages: List[ChatMessage]) -> List[Dict[str, Any]]:
+    def format_agent_messages(messages: List[ChatAgentMessage]) -> List[Dict[str, Any]]:
         """
         Ensure message structure is Claude-compatible.
         - If message content is str, wrap into [{"type": "text", "text": ...}]
