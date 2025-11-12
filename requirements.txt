@@ -8,3 +8,4 @@ ddgs
 wikipedia
 arxiv
 langchain-google-community
+asyncpg

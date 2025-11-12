@@ -1,7 +1,12 @@
 import base64
 from typing import List, Optional
-from helpers.datamodel import ChatAgentMessage
 from typing import List, Dict, Any
+from helpers.datamodel import ChatAgentMessage
+from helpers.secret import AWSSecretManager
+from helpers.config import AppConfig
+
+app_conf = AppConfig()
+aws_secret_manager = AWSSecretManager()
 
 class Utils:
     def __init__(self):
@@ -61,3 +66,11 @@ class Utils:
                 })
                 
         return formatted
+
+    def check_api_authentication(authorization_header):
+        credential = authorization_header.split(" ")[1]
+        
+        api_credential = aws_secret_manager.get_secret(app_conf.api_auth_key)
+        if credential != api_credential:
+            return False
+        return True

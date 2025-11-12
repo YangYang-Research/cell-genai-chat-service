@@ -12,7 +12,11 @@ class Converse():
             client=self.bedrock_client,
             model=self.aws_conf.bedrock_model_claude_text_id,
             temperature=self.aws_conf.bedrock_model_claude_text_temperature,
-            max_tokens=self.aws_conf.bedrock_model_claude_text_max_tokens
+            max_tokens=self.aws_conf.bedrock_model_claude_text_max_tokens,
+            guardrails={
+                "guardrailIdentifier": self.aws_conf.bedrock_guardrail_id,
+                "guardrailVersion": self.aws_conf.bedrock_guardrail_version
+            }
         )
         return converse
     
@@ -21,6 +25,10 @@ class Converse():
             client=self.bedrock_client,
             model=self.aws_conf.bedkrock_model_claude_vision_id,
             temperature=self.aws_conf.bedrock_model_claude_vision_temperature,
-            max_tokens=self.aws_conf.bedrock_model_claude_vision_max_tokens
+            max_tokens=self.aws_conf.bedrock_model_claude_vision_max_tokens,
+            guardrails={
+                "guardrailIdentifier": self.aws_conf.bedrock_guardrail_id,
+                "guardrailVersion": self.aws_conf.bedrock_guardrail_version
+            }
         )
         return converse

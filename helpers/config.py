@@ -12,6 +12,7 @@ class AppConfig(object):
     app_name: str = os.getenv("APP_NAME", "Yang GenAI Chat Service")
     app_version: str = os.getenv("APP_VERSION", "0.0.0")
     api_ver_1: str = "v1"
+    api_auth_key: str = os.getenv("API_AUTH_KEY", "")
     
 @dataclass
 class AWSConfig(object):
@@ -19,6 +20,8 @@ class AWSConfig(object):
 
     aws_region: str = os.getenv("AWS_REGION", "ap-southeast-1")
     
+    aws_secret_name: str = os.getenv("AWS_SECRET_NAME", "")
+
     bedrock_model_claude_text_id: str = os.getenv("BEDROCK_MODEL_CLAUDE_TEXT_ID", "")
     bedrock_model_claude_text_max_tokens: str = os.getenv("BEDROCK_MODEL_CLAUDE_TEXT_MAX_TOKENS", "2048")
     bedrock_model_claude_text_temperature: str = os.getenv("BEDROCK_MODEL_CLAUDE_TEXT_TEMPERATURE", "0.7")
@@ -30,7 +33,17 @@ class AWSConfig(object):
     bedrock_knowledge_base_id: str = os.getenv("BEDROCK_KNOWLEDGE_BASE_ID", "")
     bedrock_guardrail_id: str = os.getenv("BEDROCK_GUARDRAIL_ID", "")
     bedrock_guardrail_version: str = os.getenv("BEDROCK_GUARDRAIL_VERSION", "")
-    
+
+@dataclass
+class DatabaseConfig(object):
+    """Database configuration class."""
+
+    db_name: str = os.getenv("DB_NAME", "yang_genai")
+    db_host: str = os.getenv("DB_HOST", "localhost")
+    db_port: str = os.getenv("DB_PORT", "5432")
+    db_username_key: str = os.getenv("DB_USERNAME_KEY", "")
+    db_pwd_key: str = os.getenv("DB_PWD_KEY", "")
+
 @dataclass
 class LogConfig(object):
     """Logging configuration class."""
