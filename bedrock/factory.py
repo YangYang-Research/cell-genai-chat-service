@@ -1,5 +1,6 @@
 import os
-from helpers.config import ToolConfig
+from databases.crud import get_enabled_tools
+from databases.database import SessionLocal
 from bedrock.converse import Converse
 from langchain.agents import create_agent
 from tools.web_search import (
@@ -14,6 +15,19 @@ from tools.web_search import (
     SearxSearch,
     OpenWeather,
 )
+
+TOOL_CLASS_MAP = {
+    "duckduckgo": DuckDuckGo,
+    "arxiv": Arxiv,
+    "wikipedia": Wikipedia,
+    "google_search": GoogleSearch,
+    "google_scholar": GoogleScholar,
+    "google_trends": GoogleTrends,
+    "asknews": AskNews,
+    "reddit": RedditSearch,
+    "searx": SearxSearch,
+    "openweather": OpenWeather
+}
 
 class PromptFactory:
     def __init__(self):
@@ -39,38 +53,23 @@ class AgentFactory:
     """Factory for creating LangChain agents with dynamically enabled tools."""
 
     def __init__(self):
-        self.tool_conf = ToolConfig()
         self.chat_converse = Converse()
         self.GENERAL_ASSISTANT_PROMPT = PromptFactory.load_agent_prompt()
 
-    def get_enabled_tools(self):
-        """Return a list of enabled tool instances."""
+    async def get_enabled_tools(self):
+        """Fetch all enabled tools from the DB and return a list of tool classes."""
         tools = []
+        async with SessionLocal() as session:
+            db_tools = await get_enabled_tools(session)
 
-        if self.tool_conf.duckduckgo_search_enable == "enable":
-            tools.append(DuckDuckGo)
-        if self.tool_conf.arxiv_search_enable == "enable":
-            tools.append(Arxiv)
-        if self.tool_conf.wikipedia_search_enable == "enable":
-            tools.append(Wikipedia)
-        if self.tool_conf.google_search_enable == "enable":
-            tools.append(GoogleSearch)
-        if self.tool_conf.google_scholar_search_enable == "enable":
-            tools.append(GoogleScholar)
-        if self.tool_conf.google_trend_search_enable == "enable":
-            tools.append(GoogleTrends)
-        if self.tool_conf.asknews_search_enable == "enable":
-            tools.append(AskNews)
-        if self.tool_conf.reddit_search_enable == "enable":
-            tools.append(RedditSearch)
-        if self.tool_conf.searx_search_enable == "enable":
-            tools.append(SearxSearch)
-        if self.tool_conf.openweather_search_enable == "enable":
-            tools.append(OpenWeather)
+            for t in db_tools:
+                tool_cls = TOOL_CLASS_MAP.get(t.name)
+                if tool_cls:
+                    tools.append(tool_cls)
 
         return tools
     
-    def agent(self, model_name: str):
+    async def agent(self, model_name: str):
         """Create and return an LLM agent with appropriate model and tools."""
         model_name = (model_name or "").lower()
 
@@ -85,8 +84,7 @@ class AgentFactory:
         else:
             raise ValueError(f"[Agent] Unsupported model: {model_name}")
 
-        active_tools = self.get_enabled_tools()
-        # print(f"[AgentFactory] Enabled tools: {[t.name for t in active_tools]}")
+        active_tools = await self.get_enabled_tools()
 
         # Create the LangChain agent
         return create_agent(
@@ -97,7 +95,6 @@ class AgentFactory:
 
 class LLMFactory:
     def __init__(self):
-        self.tool_conf = ToolConfig()
         self.chat_converse = Converse()
     
     def llm(self, model_name: str):

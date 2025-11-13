@@ -1,4 +1,5 @@
 from sqlalchemy import text
+from helpers.loog import logger
 from urllib.parse import urlparse
 from sqlalchemy.orm import sessionmaker
 from helpers.config import DatabaseConfig
@@ -44,10 +45,10 @@ async def create_database_if_not_exists():
         exists = result.scalar() is not None
 
         if not exists:
-            print(f"🆕 Creating database '{db_name}'...")
+            logger.info(f"🆕 Creating database '{db_name}'...")
             await conn.execute(text(f'CREATE DATABASE "{db_name}"'))
-            print("✅ Database initialized.")
+            logger.info("✅ Database initialized.")
         else:
-            print(f"✅ Database '{db_name}' already exists.")
+            logger.info(f"✅ Database '{db_name}' already exists.")
 
     await default_engine.dispose()

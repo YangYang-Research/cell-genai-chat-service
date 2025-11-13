@@ -7,32 +7,51 @@ from helpers.loog import logger
 from bedrock.stream import Streaming
 import databases.models as db_models
 from contextlib import asynccontextmanager
-from helpers.config import AppConfig, AWSConfig
+from helpers.config import AppConfig, AWSConfig, DatabaseConfig
 from fastapi.middleware.cors import CORSMiddleware
 from helpers.datamodel import ChatAgentRequest, ChatLLMRequest
 from fastapi.responses import StreamingResponse, JSONResponse
 from databases.database import engine, create_database_if_not_exists
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from databases.seeds import seed_initial_data
 
 app_conf = AppConfig()
 aws_conf = AWSConfig()
+db_conf = DatabaseConfig()
 streaming = Streaming()
+SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
-# ------------------- FastAPI App -------------------
+# --- Startup ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # --- Startup ---
-    await create_database_if_not_exists()
+    try:
+        if db_conf.db_enable == "enable":
+            try:
+                await create_database_if_not_exists()
+                async with engine.begin() as conn:
+                    await conn.run_sync(db_models.Base.metadata.create_all)
+                logger.info("✅ Tables synchronized with models.")
 
-    async with engine.begin() as conn:
-        await conn.run_sync(db_models.Base.metadata.create_all)
-    print("✅ Tables synchronized with models.")
+                # --- Seeding initial data ---
+                async with SessionLocal() as session:
+                    await seed_initial_data(session)
+                logger.info("🌱 Database seeding completed successfully.")
+            except Exception as e:
+                logger.error(f"❌ Database initialization failed: {e}")
+        else:
+            logger.warning("⚠️ Database initialization skipped.")
 
-    yield  # <-- Application runs here
+        yield  # <-- always yield, even if startup fails
 
-    # --- Shutdown ---
-    await engine.dispose()
-    print("🧹 Database connection closed.")
-
+    finally:
+        try:
+            if db_conf.db_enable == "enable":
+                await engine.dispose()
+                logger.info("🧹 Database connection closed.")
+        except Exception as e:
+            logger.error(f"⚠️ Error during shutdown cleanup: {e}")
+        
+# ------------------- FastAPI App -------------------
 app = FastAPI(title=app_conf.app_name, version=app_conf.app_version, lifespan=lifespan)
 
 app.add_middleware(

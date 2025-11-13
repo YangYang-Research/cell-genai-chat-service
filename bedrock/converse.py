@@ -8,6 +8,14 @@ class Converse():
         self.bedrock_client = boto3.client("bedrock-runtime", region_name=self.aws_conf.aws_region)
 
     def claude_model_text(self):
+        # guardrails = None
+
+        # if getattr(self.aws_conf, "bedrock_guardrail_enable", "").lower() == "enable":
+        #     guardrails = {
+        #         "guardrailIdentifier": self.aws_conf.bedrock_guardrail_id,
+        #         "guardrailVersion": self.aws_conf.bedrock_guardrail_version
+        #     }
+
         converse = ChatBedrockConverse(
             client=self.bedrock_client,
             model=self.aws_conf.bedrock_model_claude_text_id,

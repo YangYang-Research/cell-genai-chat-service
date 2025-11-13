@@ -9,3 +9,6 @@ wikipedia
 arxiv
 langchain-google-community
 asyncpg
+passlib
+argon2_cffi
+pydantic[email]

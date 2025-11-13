@@ -24,13 +24,19 @@ from langchain_community.tools import (
     RedditSearchRun,
     SearxSearchRun,
 )
-from helpers.config import ToolConfig
 
-tool_conf = ToolConfig()
+from databases.crud import get_tool_by_name
+from databases.database import SessionLocal
 
+async def get_tool_conf(tool_name: str):
+    """Fetch tool credentials from the database."""
+    async with SessionLocal() as session:
+        return await get_tool_by_name(session, tool_name)
+    
 @tool
-def DuckDuckGo(search_query: str):
+async def DuckDuckGo(search_query: str):
     """Perform web search using DuckDuckGo."""
+    db_tool = await get_tool_conf("duckduckgo")
     duckduckgo_wrapper = DuckDuckGoSearchAPIWrapper(max_results=5)
     return DuckDuckGoSearchRun(
         name="DuckDuckGoSearch",
@@ -39,8 +45,9 @@ def DuckDuckGo(search_query: str):
     ).run(search_query)
 
 @tool
-def Arxiv(search_query: str):
+async def Arxiv(search_query: str):
     """Perform academic paper search via Arxiv."""
+    db_tool = await get_tool_conf("arxiv")
     arxiv_wrapper = ArxivAPIWrapper(top_k_results=3, doc_content_chars_max=500)
     return ArxivQueryRun(
         name="ArxivSearch",
@@ -49,8 +56,9 @@ def Arxiv(search_query: str):
     ).run(search_query)
 
 @tool
-def Wikipedia(search_query: str):
+async def Wikipedia(search_query: str):
     """Perform encyclopedia search via Wikipedia."""
+    db_tool = await get_tool_conf("wikipedia")
     wiki_wrapper = WikipediaAPIWrapper(top_k_results=3, doc_content_chars_max=500)
     return WikipediaQueryRun(
         name="WikipediaSearch",
@@ -59,69 +67,89 @@ def Wikipedia(search_query: str):
     ).run(search_query)
 
 @tool
-def GoogleSearch(search_query: str):
+async def GoogleSearch(search_query: str):
     """Perform web search using Google."""
-    google_wrapper = GoogleSearchAPIWrapper(google_api_key=tool_conf.google_search_api_key, google_cse_id=tool_conf.google_search_cse_id)
+    db_tool = await get_tool_conf("google_search")
+    google_wrapper = GoogleSearchAPIWrapper(
+        google_api_key=db_tool.api_key,
+        google_cse_id=db_tool.cse_id,
+    )
     return GoogleSearchRun(
         name="GoogleSearch",
         api_wrapper=google_wrapper,
-        description="Use this tool for broad and up-to-date web searches using Google. Ideal for news, websites, or general questions.",
+        description="Use this tool for broad and up-to-date web searches using Google.",
     ).run(search_query)
 
 @tool
-def GoogleScholar(search_query: str):
+async def GoogleScholar(search_query: str):
     """Perform academic search via Google Scholar."""
-    scholar_wrapper = GoogleScholarAPIWrapper(top_k_results=5, serp_api_key=tool_conf.google_scholar_serp_api_key)
+    db_tool = await get_tool_conf("google_scholar")
+    scholar_wrapper = GoogleScholarAPIWrapper(
+        top_k_results=5,
+        serp_api_key=db_tool.api_key,
+    )
     return GoogleScholarQueryRun(
         name="GoogleScholarSearch",
         api_wrapper=scholar_wrapper,
-        description="Use this tool to find peer-reviewed research papers or academic publications from Google Scholar.",
+        description="Use this tool to find peer-reviewed research papers from Google Scholar.",
     ).run(search_query)
 
 @tool
-def GoogleTrends(search_query: str):
+async def GoogleTrends(search_query: str):
     """Analyze keyword popularity via Google Trends."""
-    trends_wrapper = GoogleTrendsAPIWrapper(serp_api_key=tool_conf.google_trend_serp_api_key)
+    db_tool = await get_tool_conf("google_trends")
+    trends_wrapper = GoogleTrendsAPIWrapper(serp_api_key=db_tool.api_key)
     return GoogleTrendsQueryRun(
         name="GoogleTrends",
         api_wrapper=trends_wrapper,
-        description="Use this tool to analyze trending search topics or compare keyword popularity across time or regions.",
+        description="Use this tool to analyze trending search topics over time or regions.",
     ).run(search_query)
 
 @tool
-def AskNews(search_query: str):
+async def AskNews(search_query: str):
     """Search current news headlines and articles."""
-    ask_wrapper = AskNewsAPIWrapper(asknews_client_id=tool_conf.asknews_client_id, asknews_client_secret=tool_conf.asknews_client_secret)
+    db_tool = await get_tool_conf("asknews")
+    ask_wrapper = AskNewsAPIWrapper(
+        asknews_client_id=db_tool.client_id,
+        asknews_client_secret=db_tool.client_secret,
+    )
     return AskNewsSearch(
         name="AskNews",
         api_wrapper=ask_wrapper,
-        description="Use this tool to search for breaking news and recent media coverage on a topic.",
+        description="Use this tool to search for breaking news and recent media coverage.",
     ).run(search_query)
 
 @tool
-def RedditSearch(search_query: str):
+async def RedditSearch(search_query: str):
     """Search Reddit posts and comments."""
-    reddit_wrapper = RedditSearchAPIWrapper(reddit_client_id=tool_conf.reddit_client_id, reddit_client_secret=tool_conf.reddit_client_secret, reddit_user_agent=tool_conf.reddit_user_agent)
+    db_tool = await get_tool_conf("reddit")
+    reddit_wrapper = RedditSearchAPIWrapper(
+        reddit_client_id=db_tool.client_id,
+        reddit_client_secret=db_tool.client_secret,
+        reddit_user_agent=db_tool.user_agent,
+    )
     return RedditSearchRun(
         name="RedditSearch",
         api_wrapper=reddit_wrapper,
-        description="Use this tool to search Reddit posts and community discussions. Helpful for opinions or social sentiment.",
+        description="Use this tool to search Reddit posts and community discussions.",
     ).run(search_query)
 
 @tool
-def SearxSearch(search_query: str):
+async def SearxSearch(search_query: str):
     """Perform privacy-friendly web search using Searx."""
-    searxsearch_wrapper = SearxSearchWrapper(searx_host=tool_conf.searx_host)
+    db_tool = await get_tool_conf("searx")
+    searx_wrapper = SearxSearchWrapper(searx_host=db_tool.host)
     return SearxSearchRun(
         name="SearxSearch",
-        wrapper=searxsearch_wrapper,
-        description="Use this tool for privacy-respecting meta search results across multiple search engines (via Searx).",
+        wrapper=searx_wrapper,
+        description="Use this tool for privacy-respecting meta search results across multiple engines.",
     ).run(search_query)
 
 @tool
-def OpenWeather(search_query: str):
+async def OpenWeather(search_query: str):
     """Query weather data via OpenWeatherMap."""
-    openweather_wrapper = OpenWeatherMapAPIWrapper(openweathermap_api_key=tool_conf.openweather_api_key)
+    db_tool = await get_tool_conf("openweather")
+    openweather_wrapper = OpenWeatherMapAPIWrapper(openweathermap_api_key=db_tool.api_key)
     return OpenWeatherMapQueryRun(
         name="WeatherQuery",
         api_wrapper=openweather_wrapper,

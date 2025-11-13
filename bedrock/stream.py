@@ -12,7 +12,7 @@ class Streaming():
         
     async def agent_astreaming(self, chat_id: str, message: dict, model_name: str, stream_mode: str) -> AsyncGenerator[str, None]:
         try:
-            agent = self.agent_factory.agent(model_name=model_name)
+            agent = await self.agent_factory.agent(model_name=model_name)
             if agent:
                 # The ReAct agent returns a dict with 'output'
                 async for token, metadata in agent.astream(input=message, stream_mode=stream_mode):
