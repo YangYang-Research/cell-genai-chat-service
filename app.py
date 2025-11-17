@@ -15,6 +15,12 @@ from databases.database import engine, create_database_if_not_exists
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from databases.seeds import seed_initial_data
 
+from routers.user import router as user_router
+from routers.message import router as message_router
+from routers.tools import router as tool_router
+from routers.llm import router as llm_router
+from routers.agent import router as agent_router
+
 app_conf = AppConfig()
 aws_conf = AWSConfig()
 db_conf = DatabaseConfig()
@@ -61,6 +67,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(user_router)
+app.include_router(message_router)
+app.include_router(tool_router)
+app.include_router(llm_router)
+app.include_router(agent_router)
 
 # ------------------- API Endpoint -------------------
 @app.get("/health")

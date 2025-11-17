@@ -25,6 +25,11 @@ class UserRead(UserBase):
 
     model_config = {"from_attributes": True}
 
+class UserOut(UserBase):
+    id: int
+
+    model_config = {"from_attributes": True}
+    
 # ------------------- Message Schemas -------------------
 
 class MessageBase(BaseModel):
@@ -41,6 +46,11 @@ class MessageUpdate(BaseModel):
 class MessageRead(MessageBase):
     id: int
     timestamp: datetime
+
+    model_config = {"from_attributes": True}
+
+class MessageOut(MessageBase):
+    id: int
 
     model_config = {"from_attributes": True}
 
@@ -76,6 +86,11 @@ class ToolRead(ToolBase):
 
     model_config = {"from_attributes": True}
 
+class ToolOut(ToolBase):
+    id: int
+
+    model_config = {"from_attributes": True}
+
 # ------------------- LLM Schemas -------------------
 
 class LLMBase(BaseModel):
@@ -104,6 +119,11 @@ class LLMRead(LLMBase):
 
     model_config = {"from_attributes": True}
 
+class LLMOut(LLMBase):
+    id: int
+
+    model_config = {"from_attributes": True}
+
 # ------------------- Agent Schemas -------------------
 
 class AgentBase(BaseModel):
@@ -127,5 +147,10 @@ class AgentRead(AgentBase):
     id: int
     created_at: datetime
     updated_at: Optional[datetime]
+
+    model_config = {"from_attributes": True}
+
+class AgentOut(AgentBase):
+    id: int
 
     model_config = {"from_attributes": True}
