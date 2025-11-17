@@ -1,26 +1,12 @@
 import secrets
-from sqlalchemy import text
 from helpers.loog import logger
-from urllib.parse import urlparse
-from sqlalchemy.orm import sessionmaker
-from helpers.config import AppConfig, DatabaseConfig
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from helpers.secret import AWSSecretManager
-from databases.models import RoleModel, UserModel, ToolConfigModel
+from helpers.config import AppConfig
+from databases.models import RoleModel, UserModel, ToolModel, LLMModel, AgentModel
 from sqlalchemy.future import select
 from passlib.context import CryptContext
+from bedrock.factory import PromptFactory
 
 app_conf = AppConfig()
-db_conf = DatabaseConfig()
-aws_secret_manager = AWSSecretManager()
-
-db_username = aws_secret_manager.get_secret(db_conf.db_username_key)
-db_pwd = aws_secret_manager.get_secret(db_conf.db_pwd_key)
-
-DATABASE_URL = f"postgresql+asyncpg://{db_username}:{db_pwd}@{db_conf.db_host}:{db_conf.db_port}/{db_conf.db_name}"
-
-engine = create_async_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 async def seed_role(session):
@@ -65,7 +51,7 @@ async def seed_admin(session):
     logger.info(f"✅ Created default admin user: {app_conf.app_admin_email}")
     logger.info(f"✅ Created default admin password: {init_admin_password}")
 
-async def seed_tool_config(session):
+async def seed_tool(session):
     tools = [
         {"name": "duckduckgo", "status": "enable"},
         {"name": "arxiv", "status": "enable"},
@@ -80,16 +66,65 @@ async def seed_tool_config(session):
     ]
 
     for t in tools:
-        result = await session.execute(select(ToolConfigModel).where(ToolConfigModel.name == t["name"]))
+        result = await session.execute(select(ToolModel).where(ToolModel.name == t["name"]))
         existing = result.scalars().first()
         if not existing:
-            session.add(ToolConfigModel(**t))
+            session.add(ToolModel(**t))
 
     await session.commit()
-    logger.info("✅ ToolConfig seeded successfully")
+    logger.info("✅ Tools seeded successfully")
 
+async def seed_llm(session):
+    """Initialize default llm."""
+    result = await session.execute(select(LLMModel))
+    existing_llms = result.scalars().all()
+
+    if not existing_llms:
+        llm = LLMModel(
+            name="Claude Sonet 4.5",
+            region="ap-southeast-1",
+            model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            model_max_tokens="4096",
+            model_temperature="0.7",
+            system_prompt=PromptFactory.load_llm_prompt()
+        )
+        session.add(llm)
+        await session.commit()
+        logger.info("✅ LLMs seeded successfully")
+
+async def seed_agent(session):
+    """Initialize default agent."""
+    result = await session.execute(select(AgentModel))
+    existing_agents = result.scalars().all()
+
+    if not existing_agents:
+        # Get first LLM
+        sql_llm = await session.execute(select(LLMModel))
+        llm = sql_llm.scalars().first()
+
+        # Get enabled tools
+        sql_tools = await session.execute(
+            select(ToolModel).where(ToolModel.status == "enable")
+        )
+        enabled_tools = sql_tools.scalars().all()
+
+        # Convert tools → [{"id":1,"name":"duckduckgo"}, ...]
+        tool_list = [{"id": t.id, "name": t.name} for t in enabled_tools]
+
+        agent = AgentModel(
+            name="Yang-Agent",
+            llm_id=llm.id,
+            system_prompt=PromptFactory.load_agent_prompt(),
+            tools=tool_list,
+        )
+
+        session.add(agent)
+        await session.commit()
+        logger.info("✅ Agents seeded successfully")
 
 async def seed_initial_data(session):
     await seed_role(session)
     await seed_admin(session)
-    await seed_tool_config(session)
+    await seed_tool(session)
+    await seed_llm(session)
+    await seed_agent(session)

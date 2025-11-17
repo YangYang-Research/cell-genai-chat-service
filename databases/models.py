@@ -1,38 +1,61 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime, Boolean, func
 from sqlalchemy.orm import relationship
 from databases.base import Base
+from sqlalchemy.types import JSON
 
-class AWSConfigModel(Base):
-    __tablename__ = "aws_config"
+class LLMModel(Base):
+    __tablename__ = "llms"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(100), nullable=False, unique=True)
 
-    aws_region = Column(String(64), default="ap-southeast-1")
-    aws_secret_name = Column(String(255), nullable=True)
+    # AWS Region
+    region = Column(String(64), default="ap-southeast-1")
 
-    # Claude Text model
-    bedrock_model_claude_text_id = Column(String(255), nullable=True)
-    bedrock_model_claude_text_max_tokens = Column(String(16), default="2048")
-    bedrock_model_claude_text_temperature = Column(String(8), default="0.7")
-
-    # Claude Vision model
-    bedrock_model_claude_vision_id = Column(String(255), nullable=True)
-    bedrock_model_claude_vision_max_tokens = Column(String(16), default="2048")
-    bedrock_model_claude_vision_temperature = Column(String(8), default="0.7")
-
-    # Knowledge Base
-    bedrock_knowledge_base_id = Column(String(255), nullable=True)
+    # Model
+    model_id = Column(String(255), nullable=True)
+    model_max_tokens = Column(String(16), default="2048")
+    model_temperature = Column(String(8), default="0.7")
 
     # Guardrails
-    bedrock_guardrail_id = Column(String(255), nullable=True)
-    bedrock_guardrail_version = Column(String(64), nullable=True)
+    guardrail_id = Column(String(255), nullable=True)
+    guardrail_version = Column(String(64), nullable=True)
+    
+    # System prompt
+    system_prompt = Column(Text, nullable=True)
 
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-class ToolConfigModel(Base):
-    __tablename__ = "tool_config"
+    agents = relationship("AgentModel", back_populates="llms")
+
+class AgentModel(Base):
+    __tablename__ = "agents"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(100), nullable=False, unique=True)
+
+    # Knowledge Base
+    knowledge_base_id = Column(String(255), nullable=True)
+
+    # LLM id
+    llm_id = Column(Integer, ForeignKey("llms.id"))
+
+    # System prompt
+    system_prompt = Column(Text, nullable=True)
+
+    # List tools
+    tools = Column(JSON, nullable=True)
+
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    llms = relationship("LLMModel", back_populates="agents")
+
+class ToolModel(Base):
+    __tablename__ = "tools"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
@@ -61,7 +84,7 @@ class RoleModel(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # One-to-many relationship — A role can have many users
-    users = relationship("UserModel", back_populates="role")
+    users = relationship("UserModel", back_populates="roles")
 
 class UserModel(Base):
     __tablename__ = "users"
@@ -75,8 +98,8 @@ class UserModel(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    role = relationship("RoleModel", back_populates="users")
-    messages = relationship("MessageModel", back_populates="user")
+    roles = relationship("RoleModel", back_populates="users")
+    messages = relationship("MessageModel", back_populates="users")
 
 class MessageModel(Base):
     __tablename__ = "messages"
@@ -86,4 +109,4 @@ class MessageModel(Base):
     content = Column(Text)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("UserModel", back_populates="messages")
+    users = relationship("UserModel", back_populates="messages")
