@@ -1,14 +1,71 @@
-from sqlalchemy.future import select
-from databases import models, schemas
+# crud.py
+from typing import List, Optional
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from databases import models, schemas
 
-# ---------------- Message CRUD (existing) ----------------
-async def create_message(db: AsyncSession, message: schemas.MessageCreate):
-    db_msg = models.MessageModel(**message.dict())
-    db.add(db_msg)
+# -------------------  USERS  -------------------
+
+async def create_user(db: AsyncSession, data: schemas.UserCreate):
+    user_data = data.model_dump()
+    user = models.UserModel(**user_data)
+    db.add(user)
     await db.commit()
-    await db.refresh(db_msg)
-    return db_msg
+    await db.refresh(user)
+    return user
+
+
+async def get_users(db: AsyncSession):
+    result = await db.execute(select(models.UserModel))
+    return result.scalars().all()
+
+
+async def get_user(db: AsyncSession, user_id: int):
+    result = await db.execute(
+        select(models.UserModel).where(models.UserModel.id == user_id)
+    )
+    return result.scalars().first()
+
+
+async def update_user(db: AsyncSession, user_id: int, data: schemas.UserUpdate):
+    result = await db.execute(
+        select(models.UserModel).where(models.UserModel.id == user_id)
+    )
+    user = result.scalars().first()
+    if not user:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(user, key, value)
+
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def delete_user(db: AsyncSession, user_id: int):
+    result = await db.execute(
+        select(models.UserModel).where(models.UserModel.id == user_id)
+    )
+    user = result.scalars().first()
+    if not user:
+        return None
+
+    await db.delete(user)
+    await db.commit()
+    return True
+
+# -------------------  MESSAGES  -------------------
+
+async def create_message(db: AsyncSession, data: schemas.MessageCreate):
+    message_data = data.model_dump()
+    message = models.MessageModel(**message_data)
+    db.add(message)
+    await db.commit()
+    await db.refresh(message)
+    return message
 
 
 async def get_user_messages(db: AsyncSession, user_id: int):
@@ -18,39 +75,196 @@ async def get_user_messages(db: AsyncSession, user_id: int):
     return result.scalars().all()
 
 
-# ---------------- ToolConfig CRUD (new) ----------------
-async def get_enabled_tools(db: AsyncSession):
-    """Return all ToolConfigModel rows with status 'enable'."""
+async def get_message(db: AsyncSession, message_id: int):
     result = await db.execute(
-        select(models.ToolConfigModel).where(models.ToolConfigModel.status == "enable")
-    )
-    return result.scalars().all()
-
-
-async def get_tool_by_name(db: AsyncSession, tool_name: str):
-    """Return a ToolConfigModel by its name."""
-    result = await db.execute(
-        select(models.ToolConfigModel).where(models.ToolConfigModel.name == tool_name)
+        select(models.MessageModel).where(models.MessageModel.id == message_id)
     )
     return result.scalars().first()
 
 
-async def create_tool(db: AsyncSession, tool: schemas.ToolConfigCreate):
-    """Create a new tool configuration."""
-    db_tool = models.ToolConfigModel(**tool.dict())
-    db.add(db_tool)
+async def delete_message(db: AsyncSession, message_id: int):
+    result = await db.execute(
+        select(models.MessageModel).where(models.MessageModel.id == message_id)
+    )
+    msg = result.scalars().first()
+    if not msg:
+        return None
+
+    await db.delete(msg)
     await db.commit()
-    await db.refresh(db_tool)
-    return db_tool
+    return True
+
+# -------------------  TOOL CONFIG  -------------------
+
+async def create_tool(db: AsyncSession, data: schemas.ToolCreate):
+    tool_data = data.model_dump()
+    tool = models.ToolModel(**tool_data)
+    db.add(tool)
+    await db.commit()
+    await db.refresh(tool)
+    return tool
 
 
-async def update_tool_status(db: AsyncSession, tool_name: str, status: str):
-    """Update the status of a tool ('enable'/'disable')."""
-    db_tool = await get_tool_by_name(db, tool_name)
-    if not db_tool:
-        raise ValueError(f"Tool '{tool_name}' not found")
-    db_tool.status = status
-    db.add(db_tool)
+async def get_tools(db: AsyncSession):
+    result = await db.execute(select(models.ToolModel))
+    return result.scalars().all()
+
+
+async def get_tool(db: AsyncSession, tool_id: int):
+    result = await db.execute(
+        select(models.ToolModel).where(models.ToolModel.id == tool_id)
+    )
+    return result.scalars().first()
+
+
+async def get_tool_by_name(db: AsyncSession, tool_name: str):
+    result = await db.execute(
+        select(models.ToolModel).where(models.ToolModel.name == tool_name)
+    )
+    return result.scalars().first()
+
+
+async def get_enabled_tools(db: AsyncSession):
+    """Return all tools where status=='enable'"""
+    result = await db.execute(
+        select(models.ToolModel).where(models.ToolModel.status == "enable")
+    )
+    return result.scalars().all()
+
+
+async def update_tool(db: AsyncSession, tool_id: int, data: schemas.ToolUpdate):
+    result = await db.execute(
+        select(models.ToolModel).where(models.ToolModel.id == tool_id)
+    )
+    tool = result.scalars().first()
+    if not tool:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(tool, key, value)
+
+    db.add(tool)
     await db.commit()
-    await db.refresh(db_tool)
-    return db_tool
+    await db.refresh(tool)
+    return tool
+
+
+async def delete_tool(db: AsyncSession, tool_id: int):
+    result = await db.execute(
+        select(models.ToolModel).where(models.ToolModel.id == tool_id)
+    )
+    tool = result.scalars().first()
+    if not tool:
+        return None
+
+    await db.delete(tool)
+    await db.commit()
+    return True
+
+
+# -------------------  LLMs  -------------------
+
+async def create_llm(db: AsyncSession, data: schemas.LLMCreate):
+    llm_data = data.model_dump()
+    llm = models.LLMModel(**llm_data)
+    db.add(llm)
+    await db.commit()
+    await db.refresh(llm)
+    return llm
+
+
+async def get_llms(db: AsyncSession):
+    result = await db.execute(select(models.LLMModel))
+    return result.scalars().all()
+
+
+async def get_llm(db: AsyncSession, llm_id: int):
+    result = await db.execute(
+        select(models.LLMModel).where(models.LLMModel.id == llm_id)
+    )
+    return result.scalars().first()
+
+
+async def update_llm(db: AsyncSession, llm_id: int, data: schemas.LLMUpdate):
+    result = await db.execute(
+        select(models.LLMModel).where(models.LLMModel.id == llm_id)
+    )
+    llm = result.scalars().first()
+    if not llm:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(llm, key, value)
+
+    db.add(llm)
+    await db.commit()
+    await db.refresh(llm)
+    return llm
+
+
+async def delete_llm(db: AsyncSession, llm_id: int):
+    result = await db.execute(
+        select(models.LLMModel).where(models.LLMModel.id == llm_id)
+    )
+    llm = result.scalars().first()
+    if not llm:
+        return None
+
+    await db.delete(llm)
+    await db.commit()
+    return True
+
+# -------------------  AGENTS  -------------------
+
+async def create_agent(db: AsyncSession, data: schemas.AgentCreate):
+    agent_data = data.model_dump()
+    agent = models.AgentModel(**agent_data)
+    db.add(agent)
+    await db.commit()
+    await db.refresh(agent)
+    return agent
+
+
+async def get_agents(db: AsyncSession):
+    result = await db.execute(select(models.AgentModel))
+    return result.scalars().all()
+
+
+async def get_agent(db: AsyncSession, agent_id: int):
+    result = await db.execute(
+        select(models.AgentModel).where(models.AgentModel.id == agent_id)
+    )
+    return result.scalars().first()
+
+
+async def update_agent(db: AsyncSession, agent_id: int, data: schemas.AgentUpdate):
+    result = await db.execute(
+        select(models.AgentModel).where(models.AgentModel.id == agent_id)
+    )
+    agent = result.scalars().first()
+    if not agent:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(agent, key, value)
+
+    db.add(agent)
+    await db.commit()
+    await db.refresh(agent)
+    return agent
+
+
+async def delete_agent(db: AsyncSession, agent_id: int):
+    result = await db.execute(
+        select(models.AgentModel).where(models.AgentModel.id == agent_id)
+    )
+    agent = result.scalars().first()
+    if not agent:
+        return None
+
+    await db.delete(agent)
+    await db.commit()
+    return True

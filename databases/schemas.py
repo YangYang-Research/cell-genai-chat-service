@@ -1,25 +1,32 @@
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from typing import Optional, List, Any
 from datetime import datetime
 
-# ---------------- User Schemas ----------------
+# ------------------- User Schemas -------------------
+
 class UserBase(BaseModel):
     username: str
     email: EmailStr
     full_name: Optional[str] = None
 
 class UserCreate(UserBase):
-    password: str  # Plaintext password only during signup
+    password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    password: Optional[str] = None
 
 class UserRead(UserBase):
     id: int
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
-# ---------------- Message Schemas ----------------
+# ------------------- Message Schemas -------------------
+
 class MessageBase(BaseModel):
     role: str
     content: str
@@ -27,21 +34,21 @@ class MessageBase(BaseModel):
 class MessageCreate(MessageBase):
     user_id: int
 
+class MessageUpdate(BaseModel):
+    role: Optional[str] = None
+    content: Optional[str] = None
+
 class MessageRead(MessageBase):
     id: int
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
-class ChatResponse(BaseModel):
-    user_message: str
-    ai_response: str
+# ------------------- Tool Schemas -------------------
 
-# ---------------- ToolConfig Schemas ----------------
-class ToolConfigBase(BaseModel):
+class ToolBase(BaseModel):
     name: str
-    status: Optional[str] = "enable"
+    status: str
     host: Optional[str] = None
     api_key: Optional[str] = None
     cse_id: Optional[str] = None
@@ -49,12 +56,11 @@ class ToolConfigBase(BaseModel):
     client_secret: Optional[str] = None
     user_agent: Optional[str] = None
 
-class ToolConfigCreate(ToolConfigBase):
-    """Schema for creating a new tool config."""
+class ToolCreate(ToolBase):
     pass
 
-class ToolConfigUpdate(BaseModel):
-    """Schema for updating an existing tool config."""
+class ToolUpdate(BaseModel):
+    name: Optional[str] = None
     status: Optional[str] = None
     host: Optional[str] = None
     api_key: Optional[str] = None
@@ -63,10 +69,63 @@ class ToolConfigUpdate(BaseModel):
     client_secret: Optional[str] = None
     user_agent: Optional[str] = None
 
-class ToolConfigRead(ToolConfigBase):
+class ToolRead(ToolBase):
     id: int
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+# ------------------- LLM Schemas -------------------
+
+class LLMBase(BaseModel):
+    name: str
+    provider: str
+    model_id: str
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    status: str
+
+class LLMCreate(LLMBase):
+    pass
+
+class LLMUpdate(BaseModel):
+    name: Optional[str] = None
+    provider: Optional[str] = None
+    model_id: Optional[str] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    status: Optional[str] = None
+
+class LLMRead(LLMBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    model_config = {"from_attributes": True}
+
+# ------------------- Agent Schemas -------------------
+
+class AgentBase(BaseModel):
+    name: str
+    knowledge_base_id: Optional[str] = None
+    llm_id: int
+    system_prompt: Optional[str] = None
+    tools: Optional[List[Any]] = None  # stored JSON
+
+class AgentCreate(AgentBase):
+    pass
+
+class AgentUpdate(BaseModel):
+    name: Optional[str] = None
+    knowledge_base_id: Optional[str] = None
+    llm_id: Optional[int] = None
+    system_prompt: Optional[str] = None
+    tools: Optional[List[Any]] = None
+
+class AgentRead(AgentBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    model_config = {"from_attributes": True}
